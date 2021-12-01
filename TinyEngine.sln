@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TinyEngine", "TinyEngine.vcxproj", "{488A2E01-8224-4964-B6C8-E8C9670B7A9F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Client|x64 = Client|x64
+		Server|x64 = Server|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{488A2E01-8224-4964-B6C8-E8C9670B7A9F}.Client|x64.ActiveCfg = Client|x64
+		{488A2E01-8224-4964-B6C8-E8C9670B7A9F}.Client|x64.Build.0 = Client|x64
+		{488A2E01-8224-4964-B6C8-E8C9670B7A9F}.Server|x64.ActiveCfg = Server|x64
+		{488A2E01-8224-4964-B6C8-E8C9670B7A9F}.Server|x64.Build.0 = Server|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {81166FBA-C565-4C09-8E3C-CAAB1A2075E4}
+	EndGlobalSection
+EndGlobal
