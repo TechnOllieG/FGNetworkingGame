@@ -4,6 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <WinSock2.h>
+#include "PongDefinitions.h"
 
 DWORD recvMessages(void* socket)
 {
