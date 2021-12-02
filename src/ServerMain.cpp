@@ -37,6 +37,7 @@ DWORD recvWorker(void* ptr)
 			{
 				if (!users[i].active)
 					continue;
+				// Test
 
 				send(users[i].sock, disconnectText, strlen(disconnectText), 0);
 			}
