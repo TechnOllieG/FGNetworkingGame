@@ -21,9 +21,11 @@ struct User
 User users[USER_MAX];
 std::mutex userMutex;
 
-const float blockMoveSpeed = 20;
-const float ballMoveSpeed = 60;
-bool gameStarted = true;
+const float fixedTimeStep = 0.016f;
+float accumulator = 0;
+const float blockMoveSpeed = 300;
+const float ballMoveSpeed = 450;
+bool gameStarted = false;
 std::mutex gameStartMutex;
 
 Vector2 ballPos = Vector2(ResolutionWidth * 0.5f - BallSize * 0.5f, ResolutionHeight * 0.5f - BallSize * 0.5f);
@@ -61,7 +63,7 @@ DWORD recvWorker(void* ptr)
 		return -1;
 	}
 
-	while (true)
+	while (!userDisconnected)
 	{
 		int recvSize = recv(user->sock, (char*) &packet, sizeof(packet), 0);
 		if (recvSize == SOCKET_ERROR || recvSize == 0)
@@ -105,11 +107,13 @@ DWORD recvWorker(void* ptr)
 			if (!users[i].active)
 				continue;
 
+			toClient.playerId = i;
 			send(users[i].sock, (char*) &toClient, sizeof(toClient), 0);
 		}
 		userMutex.unlock();
 	}
 
+	closesocket(user->sock);
 	return 0;
 }
 
@@ -166,6 +170,7 @@ DWORD acceptWorker(void* ptr)
 			if (!users[i].active)
 				continue;
 
+			toClient.playerId = i;
 			send(users[i].sock, (char*) &toClient, sizeof(toClient), 0);
 			++amountOfUsers;
 		}
@@ -198,10 +203,14 @@ void blockCollisionSolve()
 	SDL_Rect leftBlock {leftBlockX, leftBlockHeight, BlockWidth, BlockHeight};
 	SDL_Rect rightBlock {rightBlockX, rightBlockHeight, BlockWidth, BlockHeight};
 
+	Vector2 ballCenter = Vector2(ballPos.x + BallSize * 0.5f, ballPos.y + BallSize * 0.5f);
+	Vector2 leftBlockCenter = Vector2(leftBlock.x + BlockWidth * 0.5f, leftBlock.y + BlockHeight * 0.5f);
+	Vector2 rightBlockCenter = Vector2(rightBlock.x + BlockWidth * 0.5f, rightBlock.y + BlockHeight * 0.5f);
+
 	if (ball.x <= leftBlock.x + BlockWidth && ball.y + BallSize >= leftBlock.y && ball.y <= leftBlock.y + BlockHeight)
-		ballDirection = Vector2::Reflect(ballDirection, Vector2(1, 0));
+		ballDirection = (ballCenter - leftBlockCenter).normalized();
 	else if (ball.x + BallSize >= rightBlock.x && ball.y + BallSize >= rightBlock.y && ball.y <= leftBlock.y + BlockHeight)
-		ballDirection = Vector2::Reflect(ballDirection, Vector2(-1, 0));
+		ballDirection = (ballCenter - rightBlockCenter).normalized();
 }
 
 void wallCollisionSolve()
@@ -212,19 +221,21 @@ void wallCollisionSolve()
 	{
 		++rightScore;
 		ballPos = Vector2(ResolutionWidth * 0.5f - BallSize * 0.5f, ResolutionHeight * 0.5f - BallSize * 0.5f);
+		ballDirection = Vector2(-1, 0);
 		return;
 	}
 	if (ball.x + BallSize >= ResolutionWidth)
 	{
 		++leftScore;
 		ballPos = Vector2(ResolutionWidth * 0.5f - BallSize * 0.5f, ResolutionHeight * 0.5f - BallSize * 0.5f);
+		ballDirection = Vector2(1, 0);
 		return;
 	}
 
 	if (ball.y <= 0)
-		Vector2::Reflect(ballDirection, Vector2(0, 1));
-	else if (ball.y + BallSize >= ResolutionHeight)
-		Vector2::Reflect(ballDirection, Vector2(0, -1));
+		ballDirection = Vector2::Reflect(ballDirection, Vector2(0, 1));
+	if (ball.y + BallSize >= ResolutionHeight)
+		ballDirection = Vector2::Reflect(ballDirection, Vector2(0, -1));
 }
 
 int WinMain(HINSTANCE, HINSTANCE, char*, int)
@@ -244,7 +255,7 @@ int WinMain(HINSTANCE, HINSTANCE, char*, int)
 	sockaddr_in bindAddr;
 	bindAddr.sin_family = AF_INET;
 	bindAddr.sin_addr.s_addr = INADDR_ANY;
-	bindAddr.sin_port = htons(666);
+	bindAddr.sin_port = htons(Port);
 
 	if (bind(listenSock, (sockaddr*)&bindAddr, sizeof(bindAddr)))
 	{
@@ -272,23 +283,34 @@ int WinMain(HINSTANCE, HINSTANCE, char*, int)
 
 		if (gameHasStarted)
 		{
-			// Physics loop
-			packetMutex.lock();
+			accumulator += engDeltaTime();
 
-			moveDirectionMutex.lock();
-			leftBlockHeight += leftBlockMoveDirection * (blockMoveSpeed * engDeltaTime());
-			rightBlockHeight += rightBlockMoveDirection * (blockMoveSpeed * engDeltaTime());
-			moveDirectionMutex.unlock();
+			while (accumulator >= fixedTimeStep)
+			{
+				// Physics loop
+				packetMutex.lock();
 
-			clamp(leftBlockHeight, 0, ResolutionHeight - BlockHeight);
-			clamp(rightBlockHeight, 0, ResolutionHeight - BlockHeight);
+				moveDirectionMutex.lock();
+				leftBlockHeight += leftBlockMoveDirection * (blockMoveSpeed * fixedTimeStep);
+				rightBlockHeight += rightBlockMoveDirection * (blockMoveSpeed * fixedTimeStep);
+				moveDirectionMutex.unlock();
 
-			ballPos += ballDirection * (ballMoveSpeed * engDeltaTime());
+				clamp(leftBlockHeight, 0, ResolutionHeight - BlockHeight);
+				clamp(rightBlockHeight, 0, ResolutionHeight - BlockHeight);
 
-			packetMutex.unlock();
+				ballPos += ballDirection * (ballMoveSpeed * fixedTimeStep);
 
-			blockCollisionSolve();
-			wallCollisionSolve();
+				packetMutex.unlock();
+
+				blockCollisionSolve();
+				wallCollisionSolve();
+
+				gameStartMutex.lock();
+				gameHasStarted = gameStarted;
+				gameStartMutex.unlock();
+
+				accumulator -= fixedTimeStep;
+			}
 		}
 
 		renderPong(ballPos, leftBlockHeight, rightBlockHeight, leftScore, rightScore);

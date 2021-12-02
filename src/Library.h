@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 
 struct Vector2
 {
@@ -89,8 +90,8 @@ struct Vector2
 	static Vector2 Reflect(Vector2 direction, Vector2 normal)
 	{
 		float projectedVectorOnNormal = Vector2::Dot(direction, normal);
-		direction -= (normal * projectedVectorOnNormal).normalized();
-		return direction;
+		direction -= normal * (projectedVectorOnNormal * 2);
+		return direction.normalized();
 	}
 };
 
