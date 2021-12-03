@@ -88,7 +88,7 @@ int WinMain(HINSTANCE, HINSTANCE, char*, int)
 					return -1;
 				}
 
-				uint8_t ipBytes[] = { 31, 208, 245, 110 };
+				uint8_t ipBytes[] = { 10, 20, 1, 182 };
 
 				sockaddr_in connectAddr;
 				connectAddr.sin_family = AF_INET;
