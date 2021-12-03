@@ -13,6 +13,11 @@ DWORD recvMessages(void* socket)
 	{
 		char buffer[1060];
 		int recvSize = recv(sock, buffer, 1060, 0);
+		if(recvSize == 0 || recvSize == SOCKET_ERROR)
+		{
+			return 0;
+		}
+
 		engPrint("%.*s", recvSize, buffer);
 	}
 
@@ -26,7 +31,7 @@ int WinMain(HINSTANCE, HINSTANCE, char*, int)
 
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	uint8_t ipBytes[] = { 127, 0, 0, 1 };
+	uint8_t ipBytes[] = { 10, 20, 2, 178 };
 
 	sockaddr_in connectAddr;
 	connectAddr.sin_family = AF_INET;
@@ -58,9 +63,9 @@ int WinMain(HINSTANCE, HINSTANCE, char*, int)
 			}
 		}
 
-		if (engKeyPressed(Key::Space))
+		if (engKeyDown(Key::Space))
 		{
-			const char* msg = "I hit space! Woasswwwowoww";
+			const char* msg = "Fredrik!!!";
 			send(sock, msg, strlen(msg), 0);
 		}
 	}
