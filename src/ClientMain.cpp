@@ -78,7 +78,7 @@ int WinMain(HINSTANCE, HINSTANCE, char*, int)
 		if (!tempConnect)
 		{
 			engSetColor(0xFFFFFFFF);
-			engText(10, 10, "Press enter to connect!");
+			engText(10, 10, "Press enter to connect (ip is 31.208.245.110:1337)!");
 
 			if (engKeyPressed(Key::Return))
 			{
@@ -88,7 +88,7 @@ int WinMain(HINSTANCE, HINSTANCE, char*, int)
 					return -1;
 				}
 
-				uint8_t ipBytes[] = { 10, 20, 1, 182 };
+				uint8_t ipBytes[] = { 31, 208, 245, 110 };
 
 				sockaddr_in connectAddr;
 				connectAddr.sin_family = AF_INET;
